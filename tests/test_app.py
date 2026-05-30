@@ -208,7 +208,8 @@ def test_list_events_by_user_filter_by_since(client, user):
             json={"user_id": user["id"], "event_type": "login", "metadata": {}},
         )
 
-    response = client.get(f"/users/{user['id']}/events?since={since.isoformat()}")
+    since_str = since.isoformat().replace("+00:00", "Z")
+    response = client.get(f"/users/{user['id']}/events?since={since_str}")
     assert response.status_code == 200
     events = response.json()
     assert len(events) == 2
