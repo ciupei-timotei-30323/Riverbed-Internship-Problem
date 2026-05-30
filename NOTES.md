@@ -8,13 +8,16 @@ Pentru fiecare bug, scrie 2-3 propoziții:
 
 ### Bug #1
 - Locatie: _main.py_,  linia 32
-- L-am gasit examinand testul _test_list_events_includes_created_items_ si _main.py_
+- L-am gasit examinand testul _test_create_event_returns_201_ si _main.py_
 - Am adaugat `status_code=201` la linia 32.
 
 ### Bug #2
-- **Unde era:**
-- **Cum l-am găsit:**
-- **Cum l-am fixat:**
+- Locatie: _storage.py_, linia 51
+- L-am gasit apeland endpointul dupa care am observat ca primul event nu aparea
+- niciodata in lista evenimentelor. Dupa care, pornind de la testul _test_list_events_includes_created_items_ am 
+- examinat fiecare endpoint apelat si functiile din spate (din _storage.py_). Astfel am observat doi `+ 1`
+- de care nu era nevoie.
+- Am sters `+ 1` si am lasata linia ca `return all_events[offset : offset + limit]`.
 
 ### Bug #3
 - **Unde era:**
