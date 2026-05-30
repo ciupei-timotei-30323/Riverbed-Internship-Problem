@@ -278,3 +278,13 @@ def test_list_events_by_user_hides_soft_deleted_events(client, user):
 def test_list_events_by_user_invalid_since_returns_422(client, user):
     response = client.get(f"/users/{user['id']}/events?since=not-a-date")
     assert response.status_code == 422
+
+
+def test_list_events_by_user_with_naive_datetime_does_not_crash(client, user):
+    client.post(
+        "/events",
+        json={"user_id": user["id"], "event_type": "click", "metadata": {}},
+    )
+    naive_date_str = "2024-06-07T12:00:00"
+    response = client.get(f"/users/{user['id']}/events?since={naive_date_str}")
+    assert response.status_code == 200
