@@ -20,9 +20,12 @@ Pentru fiecare bug, scrie 2-3 propoziții:
 - Am sters `+ 1` si am lasata linia ca `return all_events[offset : offset + limit]`.
 
 ### Bug #3
-- **Unde era:**
-- **Cum l-am găsit:**
-- **Cum l-am fixat:**
+- Locatie: _storage.py_, functiile : _soft_delete_event_ , _list_events_
+- Am testat endpointul de delete si am observat ca nu si ascundea event-urile sterse
+- asa ca am inspectat mai indeaproape functiile folosite de acest endpoint si am constatat ca
+- nu se verifica daca eventul are atributul de `deleted_at` sau nu.
+- Am introdus un check in functia _soft_delete_event_ si _list_events_ pentru a verifica daca eventul are
+- atributul `deleted_at` sau nu. In caz ca acesta e prezent, eventul este ignorat.
 
 ---
 
@@ -38,11 +41,22 @@ Pentru fiecare bug, scrie 2-3 propoziții:
 
 Fii cinstit. Nu pierzi puncte dacă spui adevărul, dimpotrivă.
 
-- **Ce ai folosit:** (ChatGPT / Cursor / Copilot / altele)
-- **Prompturi reprezentative folosite:** (scrie prompturile pe care le consideri relevante + context scurt: la ce te-au ajutat)
+- **Ce ai folosit:** Gemini
+- **Prompturi reprezentative folosite:** 
+  1. _Should I add another list of deleted events or should I check for deleted events when fetching events from the memory?_
+     - Context: Ma gandeam la o strategie pentru a gestiona evenimentele sterse.
+     - M-a ajutat in strategia de gestionare a evenimentelor sterse.
+  2. _how can I rewrite this so that if the id of the event doesn't exist, None is returned [Regarding the function soft_delete_event()]_
+     - Context: Incercam sa rezolv un warning din partea IDE-ului 
+     - Mi-a dat codul necesar pentru a scapa de eroarea respectiva.
+  3. _In this method, what do those Query() calls do? Are they necesary?_
+     - Context: Incercam sa inteleg unele metode si sintaxa fastapi
+     - M-a lamurit de ce am nevoie si ce face `Query()`
 - **Unde te-a ajutat cel mai mult:**
+  - In a ajunge la curent cu sintaxa si mecanismele fastapi.
 - **Unde te-a încurcat sau ți-a dat un răspuns greșit:** (foarte interesant pentru noi!)
 - **Cum ai verificat ce-a generat:**
+  - Fie am rulat API-ul si am verificat endpointurile ori am rulat testele.
 - **Anexă opțională — export chat:** (dacă vrei, poți adăuga un export de chat relevant)
 
 ---

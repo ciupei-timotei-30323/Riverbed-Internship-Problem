@@ -48,14 +48,17 @@ class Storage:
     def list_events(self, offset: int = 0, limit: int = 50) -> list[Event]:
         # NOTE: returns events in insertion order
         all_events = list(self._events.values())
+        for event in all_events:
+            if event.deleted_at is not None:
+                all_events.remove(event)
         return all_events[offset : offset + limit]
 
     def soft_delete_event(self, event_id: int) -> Optional[Event]:
         event = self._events.get(event_id)
-        if event is None:
-            return None
-        event.deleted_at = datetime.now(timezone.utc)
-        return event
+        if event and event.deleted_at is None:
+            event.deleted_at = datetime.now(timezone.utc)
+            return event
+        return None
 
 
 storage = Storage()
