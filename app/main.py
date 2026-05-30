@@ -4,7 +4,7 @@ A small FastAPI service for tracking user activity events.
 """
 from fastapi import FastAPI, HTTPException, Query
 from typing import Optional
-from datetime import datetime
+from datetime import datetime, timezone
 from app.models import Event, EventCreate, User, UserCreate
 from app.storage import storage
 
@@ -58,6 +58,9 @@ def list_user_events(
         user_id: int,
         since: Optional[datetime] = Query(None, description="Filter events by date"),
 ) -> list[Event]:
+
+    if since is not None and since.tzinfo is None:
+        since = since.replace(tzinfo=timezone.utc)
 
     user = storage.get_user(user_id)
     if user is None:
