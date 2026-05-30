@@ -1,8 +1,4 @@
 """Tests for the Activity Tracker API.
-
-Some of these tests currently FAIL. That is expected -
-the failures point to the bugs you need to fix.
-
 Run with: pytest -v
 """
 
@@ -29,6 +25,15 @@ def client():
 def user(client):
     response = client.post(
         "/users", json={"email": "alice@example.com", "name": "Alice"}
+    )
+    assert response.status_code == 201
+    return response.json()
+
+
+@pytest.fixture
+def other_user(client):
+    response = client.post(
+        "/users", json={"email": "timo@example.com", "name": "Timo"}
     )
     assert response.status_code == 201
     return response.json()
@@ -172,3 +177,103 @@ def test_pagination_after_delete_stays_consistent(client, user):
     assert len(page1_ids) == 3
     assert len(page2_ids) == 2
     assert set(page1_ids).isdisjoint(page2_ids), "Pages should not overlap"
+
+def test_list_events_by_user_returns_all_events_when_since_is_missing(client, user):
+    for i in range(6):
+        client.post(
+            "/events",
+            json={"user_id": user["id"], "event_type": "click", "metadata": {}},
+        )
+
+    response = client.get(f"/users/{user['id']}/events")
+    assert response.status_code == 200
+    assert len(response.json()) == 6
+
+def test_list_events_by_user_filter_by_since(client, user):
+    import time
+    from datetime import datetime, timezone
+
+    for _ in range(3):
+        client.post(
+            "/events",
+            json={"user_id": user["id"], "event_type": "click", "metadata": {}},
+        )
+
+    since = datetime.now(timezone.utc)
+    time.sleep(0.001)
+
+    for _ in range(2):
+        client.post(
+            "/events",
+            json={"user_id": user["id"], "event_type": "login", "metadata": {}},
+        )
+
+    response = client.get(f"/users/{user['id']}/events?since={since.isoformat()}")
+    assert response.status_code == 200
+    events = response.json()
+    assert len(events) == 2
+    assert all(e["event_type"] == "login" for e in events)
+
+def test_list_events_by_user_unknown_user_returns_404(client):
+    response = client.get("/users/9999/events")
+    assert response.status_code == 404
+
+def test_list_events_by_user_returns_only_own_events(client, user, other_user):
+    user1_event = client.post(
+        "/events",
+        json={"user_id": user["id"], "event_type": "click", "metadata": {}},
+    )
+    assert user1_event.status_code == 201
+
+    user2_event = client.post(
+        "/events",
+        json={"user_id": other_user["id"], "event_type": "login", "metadata": {}},
+    )
+    assert user2_event.status_code == 201
+
+    response = client.get(f"/users/{user['id']}/events?since=2023-01-01T00:00:00Z")
+
+    assert response.status_code == 200
+    assert len(response.json()) == 1
+    assert response.json()[0]["user_id"] == user["id"]
+
+def test_list_events_by_user_returns_empty_when_no_events(client, user):
+    response = client.get(f"/users/{user['id']}/events")
+    assert response.status_code == 200
+    assert response.json() == []
+
+def test_list_events_by_user_returns_empty_when_since_is_in_the_future(client, user):
+    client.post(
+        "/events",
+        json={"user_id": user["id"], "event_type": "click", "metadata": {}},
+    )
+
+    response = client.get(f"/users/{user['id']}/events?since=2049-01-01T00:00:00Z")
+    assert response.status_code == 200
+    assert response.json() == []
+
+def test_list_events_by_user_hides_soft_deleted_events(client, user):
+    response1 = client.post(
+        "/events",
+        json={"user_id": user["id"], "event_type": "click", "metadata": {}},
+    )
+    assert response1.status_code == 201
+
+    response2 = client.post(
+        "/events",
+        json={"user_id": user["id"], "event_type": "login", "metadata": {}},
+    )
+    assert response2.status_code == 201
+
+    delete_response = client.delete(f"/events/{response1.json()['id']}")
+    assert delete_response.status_code == 204
+
+    response = client.get(f"/users/{user['id']}/events")
+    assert response.status_code == 200
+    events = response.json()
+    assert len(events) == 1
+    assert events[0]["id"] == response2.json()["id"]
+
+def test_list_events_by_user_invalid_since_returns_422(client, user):
+    response = client.get(f"/users/{user['id']}/events?since=not-a-date")
+    assert response.status_code == 422

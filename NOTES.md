@@ -69,4 +69,5 @@ Fii cinstit. Nu pierzi puncte dacă spui adevărul, dimpotrivă.
 
 ## 5. Întrebări / observații
 
+- Noul endpoint returneaza si event-urile sterse ?
 (Orice nu a fost clar, orice ai vrea să discuți cu noi.)
