@@ -31,17 +31,35 @@ Pentru fiecare bug, scrie 2-3 propoziții:
 
 ## 2. Endpoint-ul nou
 
-- **Decizii de design:** (ce-ai considerat? ce ai ales și de ce?)
+- **Decizii de design:** 
+  - Am considerat ca noul endpoint **nu ar trebui** sa returneze eventurile sterse.
+  - Am considerat ca noul endpoint ar trebui sa returneze un status code 201 daca totul e ok.
+  - Am considerat ca noul endpoint ar trebui sa returneze un status code 404 daca user-ul nu exista.
+  - Am convertit `since` in timezone-aware pentru a putea fi comparat cu `datetime.now()`.
 - **Cazuri edge pe care le-ai acoperit:**
+  - Utilizator inexistent. -> 404 Not Found
+  - Utilizator fara evenimente, sau evenimente mai vechi decat `since` -> returnez o lista goala
+  - `since` e in viitor. -> returnez o lista goala
+  - `since` e in format invalid -> returnez 422 Unprocessable Entity.
+  - Date offset-naive vs. offset-aware -> Am acoperit cazul în care clientul trimite un string ISO fără timezone. 
+    - Îi atașez automat timezone-ul UTC pentru a preveni un crash 500 Internal Server Error la compararea cu event.created_at
 - **Teste adăugate:** (ce verifică fiecare)
-
+  - `test_list_events_by_user_returns_all_events_when_since_is_missing`**: Returnează toate evenimentele când lipsește `since`.
+  - `test_list_events_by_user_filter_by_since`**: Filtrează corect evenimentele mai noi decât `since`.
+  - `test_list_events_by_user_unknown_user_returns_404`**: Returnează 404 pentru user inexistent.
+  - `test_list_events_by_user_returns_only_own_events`**: Returnează strict evenimentele user-ului cerut.
+  - `test_list_events_by_user_returns_empty_when_no_events`**: Returnează listă goală dacă user-ul nu are evenimente.
+  - `test_list_events_by_user_returns_empty_when_since_is_in_the_future`**: Returnează listă goală pentru o dată `since` din viitor.
+  - `test_list_events_by_user_hides_soft_deleted_events`**: Ascunde evenimentele șterse logic (soft delete).
+  - `test_list_events_by_user_invalid_since_returns_422`**: Returnează 422 dacă formatul datei trimise este invalid.
+  - `test_list_events_by_user_with_naive_datetime_does_not_crash`**: Procesează corect datele fără timezone, prevenind erori 500.
 ---
 
 ## 3. Folosirea AI-ului
 
 Fii cinstit. Nu pierzi puncte dacă spui adevărul, dimpotrivă.
 
-- **Ce ai folosit:** Gemini
+- **Ce ai folosit:** Gemini, Claude
 - **Prompturi reprezentative folosite:** 
   1. _Should I add another list of deleted events or should I check for deleted events when fetching events from the memory?_
      - Context: Ma gandeam la o strategie pentru a gestiona evenimentele sterse.
@@ -52,9 +70,13 @@ Fii cinstit. Nu pierzi puncte dacă spui adevărul, dimpotrivă.
   3. _In this method, what do those Query() calls do? Are they necesary?_
      - Context: Incercam sa inteleg unele metode si sintaxa fastapi
      - M-a lamurit de ce am nevoie si ce face `Query()`
+  4. _How could I make sure date is ISO datetime format?_
+     - Context: Incercam sa verificam daca datele sunt in formatul ISO
+     - Mi-a dat un exemplu de cod care il verifica.
 - **Unde te-a ajutat cel mai mult:**
   - In a ajunge la curent cu sintaxa si mecanismele fastapi.
 - **Unde te-a încurcat sau ți-a dat un răspuns greșit:** (foarte interesant pentru noi!)
+  - Nu am primit niciu-un raspuns gresit.
 - **Cum ai verificat ce-a generat:**
   - Fie am rulat API-ul si am verificat endpointurile ori am rulat testele.
 - **Anexă opțională — export chat:** (dacă vrei, poți adăuga un export de chat relevant)
@@ -65,9 +87,12 @@ Fii cinstit. Nu pierzi puncte dacă spui adevărul, dimpotrivă.
 
 (Lista scurtă, 3-5 puncte. Arată-ne că ai văzut limitele actuale.)
 
+- As implemeta un sistem de Logs
+- As folosi o baza de date reala, precum PostgreSQL sau SQLite.
+- As adauga exception handlers pentru erori.
 ---
 
 ## 5. Întrebări / observații
 
-- Noul endpoint returneaza si event-urile sterse ?
+- Noul endpoint ar trebui raspunda si cu event-urile sterse ?
 (Orice nu a fost clar, orice ai vrea să discuți cu noi.)
